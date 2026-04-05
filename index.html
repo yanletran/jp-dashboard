@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日本語 Study Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --linen:#EFE8D8;--ginger:#EFCA93;--clay:#AB7D41;--shell:#DCBAAE;
+  --rust:#C3593F;--paprika:#AD2F21;--clove:#491814;--olive:#62644C;
+  --bg:#F7F4EF;--card:#FFFFFF;--text:#2C1A0E;--muted:#7A6152;
+  --border:rgba(171,125,65,0.18);--danger:#AD2F21;--danger-bg:#FDF0EE;
+  --g1:#27500A;--g1-bg:#EEF3E8;--g2:#1D3A7A;--g2-bg:#EBF0F8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.header{background:var(--clove);padding:22px 28px 18px}
+.header-row{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header h1{font-size:22px;font-weight:600;color:var(--linen);letter-spacing:-0.3px}
+.header p{font-size:12px;color:var(--ginger);margin-top:3px}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.xp-pill{background:var(--clay);color:var(--linen);border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600}
+.level-badge{background:rgba(239,202,147,0.2);color:var(--ginger);border:1px solid rgba(239,202,147,0.3);border-radius:20px;padding:3px 10px;font-size:11px}
+.badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.badge{border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600}
+.b-fire{background:rgba(239,202,147,0.25);color:var(--ginger)}
+.b-dim{background:rgba(255,255,255,0.12);color:var(--linen);border:1px solid rgba(239,232,216,0.2)}
+
+.xp-section{background:var(--linen);padding:14px 28px;border-bottom:1px solid var(--shell)}
+.xp-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--clay);margin-bottom:6px;font-weight:500}
+.xp-track{height:10px;background:var(--shell);border-radius:10px;overflow:hidden}
+.xp-fill{height:100%;background:var(--rust);border-radius:10px;width:0%;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+
+.main{padding:18px 28px;max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
+.card-title{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--clay);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.card-title a{font-size:10px;color:var(--clay);text-decoration:none;font-weight:500;text-transform:none;letter-spacing:0}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:640px){.grid2,.grid4{grid-template-columns:1fr 1fr}.main{padding:14px 16px}.header,.xp-section{padding-left:16px;padding-right:16px}}
+@media(max-width:420px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+
+.mcard{background:#FDFAF6;border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.mcard-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.mcard-val{font-size:28px;font-weight:700;color:var(--clove);line-height:1}
+.mcard-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* SKILL BARS */
+.skill-row{margin-bottom:12px}
+.skill-row:last-child{margin-bottom:0}
+.skill-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.skill-name{font-size:13px;font-weight:500}
+.skill-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.skill-pct{font-size:12px;color:var(--muted)}
+.skill-link{font-size:10px;font-weight:600;background:var(--linen);color:var(--clay);border:1px solid var(--shell);border-radius:20px;padding:2px 8px;text-decoration:none;transition:background .15s}
+.skill-link:hover{background:var(--ginger)}
+.skill-tasks{font-size:10px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 7px}
+.strack{height:7px;background:#EDE8E0;border-radius:8px;overflow:hidden}
+.sfill{height:100%;border-radius:8px;transition:width 1.4s cubic-bezier(.4,0,.2,1)}
+.task-counter-row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.task-counter-btn{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:var(--linen);color:var(--clay);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.task-counter-btn:hover{background:var(--ginger)}
+.task-counter-label{font-size:11px;color:var(--muted);flex:1}
+.task-counter-val{font-size:13px;font-weight:700;color:var(--clove);min-width:18px;text-align:center}
+
+/* FORM */
+.form-group{display:flex;flex-direction:column;gap:9px}
+.form-row{display:flex;gap:8px}
+.form-field{flex:1;display:flex;flex-direction:column;gap:4px}
+.form-label{font-size:11px;color:var(--muted);font-weight:500}
+select,input[type="number"],input[type="text"]{font-size:13px;padding:9px 11px;border-radius:8px;border:1px solid var(--shell);background:#FDFAF6;color:var(--text);width:100%;outline:none;transition:border-color .15s}
+select:focus,input:focus{border-color:var(--clay)}
+.btn{padding:10px 16px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-primary{background:var(--clay);color:var(--linen);width:100%}
+.btn-primary:hover{background:var(--rust)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(173,47,33,0.2)}
+.btn-danger:hover{background:#f9deda}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);font-size:12px;padding:6px 12px}
+.btn-ghost:hover{background:var(--linen)}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:7px}
+.xp-msg{font-size:12px;text-align:center;min-height:20px;font-weight:500}
+
+/* CHAPTER TRACKER */
+.ch-tabs{display:flex;gap:6px;margin-bottom:14px}
+.ch-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--linen);color:var(--muted);transition:all .15s}
+.ch-tab.active{background:var(--clove);color:var(--linen);border-color:var(--clove)}
+.ch-list{display:flex;flex-direction:column;gap:0}
+.ch-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.ch-row:last-child{border-bottom:none}
+.ch-num{width:22px;height:22px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ch-num.g1{background:var(--g1-bg);color:var(--g1)}
+.ch-num.g2{background:var(--g2-bg);color:var(--g2)}
+.ch-name{flex:1;color:var(--text);font-weight:500}
+.ch-name a{color:var(--text);text-decoration:none}
+.ch-name a:hover{color:var(--clay)}
+.ch-day{font-size:10px;color:var(--muted);white-space:nowrap}
+.ch-sel{width:110px;font-size:11px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--linen);color:var(--clay)}
+.ch-checks{display:flex;gap:4px;align-items:center}
+.ch-check{width:16px;height:16px;cursor:pointer;accent-color:var(--clay)}
+.ch-tag{font-size:9px;font-weight:700;border-radius:3px;padding:1px 4px;text-transform:uppercase;letter-spacing:.03em}
+.tag-ns{background:#FEF2F2;color:#B91C1C}
+.tag-st{background:#FEFCE8;color:#854D0E}
+.tag-rv{background:#EFF6FF;color:#1D4ED8}
+.tag-ma{background:#F0FDF4;color:#166534}
+
+/* PACE METER */
+.pace-bar-wrap{margin-top:6px}
+.pace-label{display:flex;justify-content:space-between;font-size:11px;color:var(--clay);margin-bottom:5px}
+.pace-track{height:8px;background:var(--shell);border-radius:8px;overflow:hidden;position:relative}
+.pace-fill-target{height:100%;background:#DCBAAE;border-radius:8px;position:absolute;top:0;left:0;transition:width .5s}
+.pace-fill-actual{height:100%;background:var(--clay);border-radius:8px;position:absolute;top:0;left:0;transition:width .8s}
+
+/* HISTORY */
+.history-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+.hist-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#FDFAF6;border:1px solid var(--border);border-radius:8px;font-size:12px}
+.hist-item.editing{background:#FFF8F0;border-color:var(--clay)}
+.hist-label{flex:1;color:var(--text);font-weight:500}
+.hist-date{color:var(--muted);font-size:11px;white-space:nowrap}
+.hist-xp{color:var(--clay);font-weight:700;white-space:nowrap;min-width:52px;text-align:right}
+.hist-actions{display:flex;gap:4px;flex-shrink:0}
+.empty-state{color:var(--muted);font-size:12px;text-align:center;padding:24px 0}
+.edit-panel{background:#FFF8F0;border:1px solid var(--clay);border-radius:10px;padding:14px;margin-top:8px;display:none}
+.edit-panel.open{display:block}
+.edit-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.edit-field{flex:1;min-width:90px;display:flex;flex-direction:column;gap:3px}
+.edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+
+/* STREAK */
+.streak-row{display:flex;gap:6px;margin-top:4px}
+.dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.dot-done{background:var(--clay);color:var(--linen)}
+.dot-today{background:var(--rust);color:#fff;box-shadow:0 0 0 3px var(--ginger)}
+.dot-miss{background:var(--linen);color:var(--clay);border:1px solid var(--shell)}
+
+/* JLPT */
+.jlpt-row{display:flex;gap:8px;flex-wrap:wrap}
+.jchip{flex:1;min-width:86px;border-radius:12px;padding:12px 10px;text-align:center;border:1px solid var(--border);text-decoration:none;transition:transform .15s;display:block}
+.jchip:hover{transform:translateY(-2px)}
+.jchip.now{background:var(--clove);border-color:var(--clove)}
+.jchip.next{background:var(--linen)}
+.jc-label{font-size:15px;font-weight:700}
+.jchip.now .jc-label{color:var(--linen)}.jchip.next .jc-label{color:var(--text)}
+.jc-day{font-size:10px;font-weight:600;color:var(--clay);margin-top:2px;text-transform:uppercase}
+.jc-status{font-size:11px;color:var(--muted);margin-top:3px}
+.jchip.now .jc-status{color:var(--ginger)}
+
+/* PHASE CARDS */
+.phase-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:500px){.phase-grid{grid-template-columns:1fr}}
+.pcard{border-radius:12px;padding:15px 13px;text-decoration:none;display:flex;flex-direction:column;gap:3px;border:1px solid var(--border);transition:transform .15s,box-shadow .15s}
+.pcard:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(73,24,20,0.08)}
+.p1{background:#F5F0E6}.p2{background:#EEF3E8}.p3{background:#EBE8F0}
+.picon{font-size:20px;margin-bottom:4px}
+.pname{font-size:13px;font-weight:700}
+.p1 .pname{color:var(--clove)}.p2 .pname{color:#27500A}.p3 .pname{color:#3C3489}
+.pdays{font-size:11px;color:var(--muted)}
+.pchaps{font-size:10px;color:var(--muted);margin-top:1px}
+.ptag{margin-top:6px;display:inline-block;font-size:10px;font-weight:700;border-radius:20px;padding:2px 9px}
+.p1 .ptag{background:var(--ginger);color:var(--clove)}.p2 .ptag{background:#C8DCA8;color:#27500A}.p3 .ptag{background:#C9C0E0;color:#3C3489}
+
+/* GRAMMAR CARDS */
+.grammar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px}
+.g-card{border-radius:10px;padding:12px 11px;text-decoration:none;display:flex;flex-direction:column;gap:4px;border:1px solid var(--border);background:#FDFAF6;transition:background .15s}
+.g-card:hover{background:var(--linen)}
+.g-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-bottom:2px}
+.g-pattern{font-size:12px;font-weight:700;color:var(--clove)}
+.g-meaning{font-size:11px;color:var(--muted)}
+.g-ch{font-size:10px;color:var(--clay);font-weight:600}
+
+/* LINK GRIDS */
+.link-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+.link-card{background:#FDFAF6;border:1px solid var(--border);border-radius:10px;padding:12px 11px;text-decoration:none;display:flex;flex-direction:column;gap:3px;transition:background .15s}
+.link-card:hover{background:var(--linen)}
+.link-icon{font-size:15px}.link-name{font-size:12px;font-weight:600;color:var(--clove)}.link-tag{font-size:10px;color:var(--clay)}
+
+.chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+.rate-table{width:100%;font-size:12px;border-collapse:collapse}
+.rate-table th{text-align:left;color:var(--muted);font-weight:600;padding:4px 8px 8px 0;border-bottom:1px solid var(--border)}
+.rate-table td{padding:7px 8px 7px 0;border-bottom:1px solid rgba(171,125,65,0.09);color:var(--text);vertical-align:top}
+.rate-table td:last-child{color:var(--clay);font-weight:700;text-align:right;white-space:nowrap}
+.rate-table tr:last-child td{border-bottom:none}
+
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--card);border-radius:16px;padding:28px;max-width:380px;width:90%;border:1px solid var(--border)}
+.modal h3{font-size:16px;font-weight:600;color:var(--clove);margin-bottom:8px}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.modal-warning{background:var(--danger-bg);border:1px solid rgba(173,47,33,0.2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--danger);margin-bottom:16px}
+
+.danger-zone{border:1px solid rgba(173,47,33,0.25);border-radius:12px;padding:16px 18px;background:var(--danger-bg)}
+.danger-title{font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--danger);margin-bottom:8px}
+.danger-desc{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+
+.footer{text-align:center;padding:24px 28px;font-size:11px;color:var(--muted);border-top:1px solid var(--shell)}
+.footer a{color:var(--clay);text-decoration:none}.footer a:hover{text-decoration:underline}
+
+.history-list::-webkit-scrollbar{width:4px}
+.history-list::-webkit-scrollbar-track{background:var(--linen);border-radius:4px}
+.history-list::-webkit-scrollbar-thumb{background:var(--shell);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- RESET MODAL -->
+<div class="modal-backdrop" id="resetModal">
+  <div class="modal">
+    <h3>Reset all data?</h3>
+    <p>This clears XP, sessions, streak, skill tasks, chapter progress, vocab count, and history. Your Notion workspace is unaffected.</p>
+    <div class="modal-warning">⚠️ This cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeReset()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmReset()">Yes, reset everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-row">
+    <div>
+      <h1>🇯🇵 日本語 Study Dashboard</h1>
+      <p id="headerSub">Genki 1 & 2 · 23 chapters · 90-day completion goal · JLPT N4</p>
+      <div class="badge-row">
+        <span class="badge b-fire" id="streakBadge">🔥 0-day streak</span>
+        <span class="badge b-dim" id="levelBadgeHero">🥉 N5 Apprentice</span>
+        <span class="badge b-dim" id="chapterBadge">Ch.1 active</span>
+        <span class="badge b-dim">Quizlet + Duolingo</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="xp-pill" id="xpPill">0 XP</div>
+      <div class="level-badge" id="nextLevelBadge">500 XP → 🥈 N5 Samurai</div>
+    </div>
+  </div>
+</div>
+
+<!-- XP BAR -->
+<div class="xp-section">
+  <div class="xp-labels"><span id="xpBarLeft">0 / 500 XP</span><span id="xpBarRight">Next: 🥈 N5 Samurai</span></div>
+  <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+</div>
+
+<div class="main">
+
+  <!-- METRICS -->
+  <div class="grid4">
+    <div class="mcard"><div class="mcard-label">Total XP</div><div class="mcard-val" id="m-xp">0</div><div class="mcard-sub">of 5,000 goal</div></div>
+    <div class="mcard"><div class="mcard-label">Chapters done</div><div class="mcard-val" id="m-chaps">0</div><div class="mcard-sub">of 23 chapters</div></div>
+    <div class="mcard"><div class="mcard-label">Vocab words</div><div class="mcard-val" id="m-vocab">40</div><div class="mcard-sub">of 920 goal</div></div>
+    <div class="mcard"><div class="mcard-label">Sessions logged</div><div class="mcard-val" id="m-sess">0</div><div class="mcard-sub">of 180 total</div></div>
+  </div>
+
+  <!-- PACE METER -->
+  <div class="card">
+    <div class="card-title">
+      <span>90-day pace tracker</span>
+      <a href="https://www.notion.so/339a4278eeb3815688e1d2837c6fe84f" target="_blank">Full completion plan ↗</a>
+    </div>
+    <div id="paceMeter"></div>
+  </div>
+
+  <!-- STREAK + LOG -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Weekly streak</div>
+      <div class="streak-row" id="streakDots"></div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px" id="streakLabel">0 of 7 days this week</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Log a session — XP auto-calculated</div>
+      <div class="form-group">
+        <div class="form-field">
+          <div class="form-label">Session type</div>
+          <select id="sessType">
+            <option value="">Choose type…</option>
+            <option value="morning">☀️ Morning block (+20 XP base)</option>
+            <option value="evening">🌙 Evening block (+20 XP base)</option>
+            <option value="review">📝 Review session (+10 XP base)</option>
+            <option value="quiz">🎯 Weekly quiz (+50 XP if Quizlet 80%+)</option>
+            <option value="boss">🏆 Boss Battle (+200 XP flat)</option>
+            <option value="bonus">⭐ Bonus session (+30 XP)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><div class="form-label">Quizlet %</div><input type="number" id="quizScore" min="0" max="100" placeholder="e.g. 87"></div>
+          <div class="form-field"><div class="form-label">Speaking mins</div><input type="number" id="speakMins" min="0" max="120" placeholder="e.g. 15"></div>
+          <div class="form-field"><div class="form-label">Vocab added</div><input type="number" id="vocabInput" min="0" max="200" placeholder="e.g. 40"></div>
+        </div>
+        <button class="btn btn-primary" onclick="logSession()">+ Log session &amp; earn XP</button>
+        <div class="xp-msg" id="xpMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAPTER TRACKER — ALL 23 CHAPTERS -->
+  <div class="card">
+    <div class="card-title">
+      <span>Chapter progress tracker — Genki 1 & 2</span>
+      <a href="https://www.notion.so/128bd43f58d844b999c7404dcbb682c5" target="_blank">Open in Notion ↗</a>
+    </div>
+    <div class="ch-tabs">
+      <div class="ch-tab active" onclick="showBook('g1',this)">📗 Genki 1 (Ch.1–12)</div>
+      <div class="ch-tab" onclick="showBook('g2',this)">📘 Genki 2 (Ch.13–23)</div>
+    </div>
+    <div id="chListG1" class="ch-list"></div>
+    <div id="chListG2" class="ch-list" style="display:none"></div>
+  </div>
+
+  <!-- SKILL BARS -->
+  <div class="card">
+    <div class="card-title">
+      <span>Skill KPIs — tap + after each completed task</span>
+      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">+/− buttons add/remove task completions</span>
+    </div>
+    <div id="skillsEl"></div>
+  </div>
+
+  <!-- CHART + HISTORY -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">XP by session type</div>
+      <div style="position:relative;height:200px"><canvas id="xpChart"></canvas></div>
+      <div class="chart-legend" id="chartLegend"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        <span>Session history</span>
+        <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">✏️ edit · 🗑️ delete</span>
+      </div>
+      <div class="history-list" id="historyList"><div class="empty-state">No sessions yet — log one above!</div></div>
+    </div>
+  </div>
+
+  <!-- GRAMMAR EXPLAINERS -->
+  <div class="card">
+    <div class="card-title">
+      <span>Grammar explainers</span>
+      <a href="https://www.notion.so/339a4278eeb38192be96d2d60fe7fb21" target="_blank">Full index ↗</a>
+    </div>
+    <div class="grammar-grid" id="grammarGrid"></div>
+  </div>
+
+  <!-- XP RATES -->
+  <div class="card">
+    <div class="card-title">XP earn rates — applied automatically</div>
+    <table class="rate-table">
+      <tr><th>Action</th><th>XP</th></tr>
+      <tr><td>Morning or evening block (2 hrs)</td><td>+20 XP</td></tr>
+      <tr><td>Review session</td><td>+10 XP</td></tr>
+      <tr><td>Weekly quiz passed (Quizlet 80–89%)</td><td>+50 +10 bonus</td></tr>
+      <tr><td>Weekly quiz passed (Quizlet 90%+)</td><td>+50 +15 bonus</td></tr>
+      <tr><td>Speaking drill (10+ mins logged)</td><td>+15 XP bonus</td></tr>
+      <tr><td>Bonus session</td><td>+30 XP</td></tr>
+      <tr><td>Boss Battle (Day 30 / 50 / 62 / 90)</td><td>+200 XP</td></tr>
+      <tr><td>7-day streak auto-bonus</td><td>+100 XP</td></tr>
+      <tr><td>Skill task completed (+ button)</td><td>+2 XP per task</td></tr>
+      <tr><td>Chapter marked Mastered</td><td>+25 XP</td></tr>
+    </table>
+  </div>
+
+  <!-- JLPT ROADMAP -->
+  <div class="card">
+    <div class="card-title">JLPT roadmap</div>
+    <div class="jlpt-row">
+      <a class="jchip now" href="https://www.notion.so/339a4278eeb38179bb14df55d0b7ddd8" target="_blank"><div class="jc-label">N5</div><div class="jc-day">Days 1–30</div><div class="jc-status">In progress</div></a>
+      <a class="jchip next" href="https://www.notion.so/339a4278eeb38179bb14df55d0b7ddd8" target="_blank"><div class="jc-label">N5 Mock</div><div class="jc-day">Day 30</div><div class="jc-status">Phase 1 boss</div></a>
+      <a class="jchip next" href="https://www.notion.so/339a4278eeb3819f9d3cca747f08a3f7" target="_blank"><div class="jc-label">Genki 2 ½</div><div class="jc-day">Day 50</div><div class="jc-status">Halfway boss</div></a>
+      <a class="jchip next" href="https://www.notion.so/339a4278eeb381d5b55add1324d87da7" target="_blank"><div class="jc-label">Genki done</div><div class="jc-day">Day 68</div><div class="jc-status">Ch.23 complete</div></a>
+      <a class="jchip next" href="https://www.notion.so/339a4278eeb381d5b55add1324d87da7" target="_blank"><div class="jc-label">N4 Mock</div><div class="jc-day">Day 90</div><div class="jc-status">Final boss</div></a>
+    </div>
+  </div>
+
+  <!-- PHASE PAGES -->
+  <div class="card">
+    <div class="card-title">Study phases — open in Notion</div>
+    <div class="phase-grid">
+      <a class="pcard p1" href="https://www.notion.so/339a4278eeb38179bb14df55d0b7ddd8" target="_blank">
+        <div class="picon">🌱</div><div class="pname">Phase 1</div>
+        <div class="pdays">Days 1–30</div><div class="pchaps">Ch.1–10 · Genki 1</div>
+        <span class="ptag">N5 foundations</span>
+      </a>
+      <a class="pcard p2" href="https://www.notion.so/339a4278eeb3819f9d3cca747f08a3f7" target="_blank">
+        <div class="picon">🌿</div><div class="pname">Phase 2</div>
+        <div class="pdays">Days 31–60</div><div class="pchaps">Ch.11–18 · Genki 1→2</div>
+        <span class="ptag">N5→N4 bridge</span>
+      </a>
+      <a class="pcard p3" href="https://www.notion.so/339a4278eeb381d5b55add1324d87da7" target="_blank">
+        <div class="picon">🌳</div><div class="pname">Phase 3</div>
+        <div class="pdays">Days 61–90</div><div class="pchaps">Ch.19–23 + N4 prep</div>
+        <span class="ptag">N4 mastery</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ALL NOTION LINKS -->
+  <div class="card">
+    <div class="card-title">All Notion pages &amp; databases</div>
+    <div class="link-grid" id="notionLinks"></div>
+  </div>
+
+  <!-- EXTERNAL TOOLS -->
+  <div class="card">
+    <div class="card-title">External study tools</div>
+    <div class="link-grid" id="extLinks"></div>
+  </div>
+
+  <!-- DANGER ZONE -->
+  <div class="danger-zone">
+    <div class="danger-title">Danger zone</div>
+    <div class="danger-desc">Reset clears all XP, sessions, streak, chapter progress, skill tasks, and history from this browser. Your Notion workspace is completely unaffected.</div>
+    <button class="btn btn-danger" onclick="openReset()">Reset all dashboard data</button>
+  </div>
+
+</div>
+
+<div class="footer">
+  日本語 Study Dashboard · Genki 1 & 2 · 23 Chapters · 90-Day JLPT N4 Goal ·
+  <a href="https://www.notion.so/334a4278eeb381fe9565f9ab61c3857f" target="_blank">Open Notion hub →</a>
+</div>
+
+<script>
+const KEY = 'jpDash_v5';
+const DEFAULTS = {
+  totalXP:0, sessions:0, streak:0,
+  streakDays:[false,false,false,false,false,false,false],
+  vocab:40, history:[],
+  xpByType:{morning:0,evening:0,review:0,quiz:0,boss:0,bonus:0},
+  skills:{reading:3,writing:5,speaking:2,listening:3,kanji:0,vocab:3,business:0},
+  skillTasks:{reading:0,writing:0,speaking:0,listening:0,kanji:0,vocab:0,business:0},
+  chapterStatus:{},
+  currentDay:1
+};
+let S = JSON.parse(JSON.stringify(DEFAULTS));
+let editingId = null;
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function load(){try{const d=localStorage.getItem(KEY);if(d)S={...JSON.parse(JSON.stringify(DEFAULTS)),...JSON.parse(d)};}catch(e){}}
+
+const LEVELS=[
+  {min:0,    label:'🥉 N5 Apprentice', next:500,  nextLabel:'🥈 N5 Samurai'},
+  {min:500,  label:'🥈 N5 Samurai',   next:1500, nextLabel:'🥇 N4 Scholar'},
+  {min:1500, label:'🥇 N4 Scholar',   next:3000, nextLabel:'💎 N4 Master'},
+  {min:3000, label:'💎 N4 Master',    next:5000, nextLabel:'🏯 JLPT Champion'},
+  {min:5000, label:'🏯 JLPT Champion',next:5000, nextLabel:'You made it!'},
+];
+function getLevel(xp){for(let i=LEVELS.length-1;i>=0;i--)if(xp>=LEVELS[i].min)return LEVELS[i];return LEVELS[0];}
+
+function calcXP(type,qs,sm){
+  let b={morning:20,evening:20,review:10,quiz:20,boss:200,bonus:30}[type]||0;
+  if(type==='quiz'&&qs>=80)b=50;
+  if(qs>=90)b+=15;else if(qs>=80)b+=10;
+  if(sm>=10)b+=15;
+  return b;
+}
+
+function logSession(){
+  const type=document.getElementById('sessType').value;
+  if(!type){showMsg('Please choose a session type','var(--paprika)');return;}
+  const qs=parseInt(document.getElementById('quizScore').value)||0;
+  const sm=parseInt(document.getElementById('speakMins').value)||0;
+  const va=parseInt(document.getElementById('vocabInput').value)||0;
+  let earned=calcXP(type,qs,sm);
+  S.totalXP+=earned; S.sessions++;
+  S.xpByType[type]=(S.xpByType[type]||0)+earned;
+  S.vocab+=va;
+
+  const todayIdx=new Date().getDay()===0?6:new Date().getDay()-1;
+  if(!S.streakDays[todayIdx]){
+    S.streakDays[todayIdx]=true; S.streak++;
+    if(S.streak>0&&S.streak%7===0){S.totalXP+=100;showMsg(`+${earned} XP! 🔥 7-day streak bonus +100 XP!`,'var(--clay)');}
+    else showMsg(`+${earned} XP earned! Total: ${S.totalXP} XP`,'var(--clay)');
+  } else {
+    showMsg(`+${earned} XP earned! Total: ${S.totalXP} XP`,'var(--clay)');
+  }
+
+  const lbl={morning:'☀️ Morning block',evening:'🌙 Evening block',review:'📝 Review session',quiz:'🎯 Weekly quiz',boss:'🏆 Boss Battle',bonus:'⭐ Bonus session'};
+  const now=new Date();
+  S.history.unshift({id:Date.now(),type,label:lbl[type],xp:earned,qs,sm,va,
+    time:now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'),
+    date:now.toLocaleDateString('en-AU',{day:'numeric',month:'short'})});
+  if(S.history.length>50)S.history.pop();
+  ['sessType','quizScore','speakMins','vocabInput'].forEach(id=>document.getElementById(id).value='');
+  save(); renderAll();
+}
+
+function showMsg(msg,color){
+  const el=document.getElementById('xpMsg');
+  el.textContent=msg; el.style.color=color;
+  setTimeout(()=>{if(el.textContent===msg)el.textContent='';},4500);
+}
+
+// CHAPTER DATA — ALL 23
+const ALL_CHAPTERS = [
+  // Genki 1
+  {n:1, book:'g1',name:'Ch.1 — New Friends',topic:'X は Y です · の · numbers',tDay:3,url:'https://www.notion.so/339a4278eeb381198da2f732803e7732'},
+  {n:2, book:'g1',name:'Ch.2 — Shopping',topic:'これ/それ/あれ · adjectives · ください',tDay:5,url:'https://www.notion.so/339a4278eeb3818d821cc2e61a789fbd'},
+  {n:3, book:'g1',name:'Ch.3 — My Town',topic:'Verb groups · ます · あります/います',tDay:8,url:'https://www.notion.so/339a4278eeb3812d8825ed81608f3301'},
+  {n:4, book:'g1',name:'Ch.4 — The First Date',topic:'て-form · ~てください · time',tDay:11,url:'https://www.notion.so/339a4278eeb38189801af6e305ae04c7'},
+  {n:5, book:'g1',name:'Ch.5 — History Class',topic:'た-form · い/な adj · frequency',tDay:14,url:'https://www.notion.so/339a4278eeb381c8830bcc4e7bffebc0'},
+  {n:6, book:'g1',name:'Ch.6 — Robert\'s Life',topic:'~ている · て chaining · も',tDay:17,url:'https://www.notion.so/339a4278eeb381c4997dc6fd97307492'},
+  {n:7, book:'g1',name:'Ch.7 — Family Portrait',topic:'~ている states · ある/いる · counters',tDay:20,url:'https://www.notion.so/339a4278eeb381bd9860df40d125f9d7'},
+  {n:8, book:'g1',name:'Ch.8 — Barbecue',topic:'Plain form · から because',tDay:23,url:'https://www.notion.so/339a4278eeb38178b2c3f9e39907db96'},
+  {n:9, book:'g1',name:'Ch.9 — Karaoke',topic:'~たい · ~のほうが · いちばん',tDay:26,url:'https://www.notion.so/339a4278eeb381368b25eba0f28dc9e5'},
+  {n:10,book:'g1',name:'Ch.10 — Winter Vacation',topic:'あげる/くれる/もらう · て + giving',tDay:30,url:'https://www.notion.so/339a4278eeb3811a81e2c9c0530c2fe3'},
+  {n:11,book:'g1',name:'Ch.11 — After Vacation',topic:'~たら · ~ても · potential できる',tDay:33,url:'https://www.notion.so/339a4278eeb381a9b426c04a322cfd0a'},
+  {n:12,book:'g1',name:'Ch.12 — Feeling III',topic:'~なければ · ~てもいい · ~といいですね',tDay:36,url:'https://www.notion.so/339a4278eeb381dd84eff4a0d64df106'},
+  // Genki 2
+  {n:13,book:'g2',name:'Ch.13 — Stereotypes',topic:'~てもいい · ~てはいけない · すぎる',tDay:38,url:'https://www.notion.so/339a4278eeb3815b8d7fd59f0ff89ac5'},
+  {n:14,book:'g2',name:'Ch.14 — Valentine\'s Day',topic:'Causative ~せる/させる',tDay:41,url:'https://www.notion.so/339a4278eeb381dbaf88c4c27b168291'},
+  {n:15,book:'g2',name:'Ch.15 — Nagano',topic:'Passive ~られる · causative-passive',tDay:44,url:'https://www.notion.so/339a4278eeb381a1bc33e4a42fa224da'},
+  {n:16,book:'g2',name:'Ch.16 — Lost and Found',topic:'~てしまう · ~ておく · ~ていく/くる',tDay:48,url:'https://www.notion.so/339a4278eeb381f2a493fe344c0422c0'},
+  {n:17,book:'g2',name:'Ch.17 — Grumble',topic:'~らしい · volitional · ~ようとする',tDay:51,url:'https://www.notion.so/339a4278eeb38107af8cf410b724000a'},
+  {n:18,book:'g2',name:'Ch.18 — Part-Time Job',topic:'Keigo: お/ご~になる · お/ご~する',tDay:55,url:'https://www.notion.so/339a4278eeb38106851ed664acbf4dae'},
+  {n:19,book:'g2',name:'Ch.19 — Boss\'s Family',topic:'~ば conditional · ~のに',tDay:58,url:'https://www.notion.so/339a4278eeb381bd84f6dbea77fa527b'},
+  {n:20,book:'g2',name:'Ch.20 — Mary\'s Shopping',topic:'~そうだ · ~ようだ · ~ような',tDay:62,url:'https://www.notion.so/339a4278eeb38104ad52dfc3331374c1'},
+  {n:21,book:'g2',name:'Ch.21 — Burglar',topic:'~ても · ~はずだ · ~ものだから',tDay:65,url:'https://www.notion.so/339a4278eeb38139b35bdb67732809f0'},
+  {n:22,book:'g2',name:'Ch.22 — International Exchange',topic:'~ことになる · ~ことにする · ~まま',tDay:68,url:'https://www.notion.so/339a4278eeb3811ea75fe6362456414d'},
+  {n:23,book:'g2',name:'Ch.23 — Good-bye',topic:'~ばよかった · ~んだって · keigo review',tDay:68,url:'https://www.notion.so/339a4278eeb381f997d3d78e096777d1'},
+];
+const ST_MAP={not_started:{cls:'tag-ns',label:'Not started'},studying:{cls:'tag-st',label:'Studying'},reviewing:{cls:'tag-rv',label:'Reviewing'},mastered:{cls:'tag-ma',label:'Mastered'}};
+
+function buildChapterList(){
+  ['g1','g2'].forEach(book=>{
+    const el=document.getElementById('chList'+book.toUpperCase());
+    const chs=ALL_CHAPTERS.filter(c=>c.book===book);
+    el.innerHTML=chs.map(c=>{
+      const st=S.chapterStatus[c.n]||'not_started';
+      const si=ST_MAP[st];
+      const opts=['not_started','studying','reviewing','mastered'].map(v=>`<option value="${v}"${v===st?' selected':''}>${ST_MAP[v].label}</option>`).join('');
+      const tb=S.chapterStatus['tb_'+c.n]||false;
+      const wb=S.chapterStatus['wb_'+c.n]||false;
+      const ql=S.chapterStatus['ql_'+c.n]||false;
+      return `<div class="ch-row">
+        <a href="${c.url}" target="_blank" style="text-decoration:none">
+          <div class="ch-num ${book}">${c.n}</div>
+        </a>
+        <div class="ch-name">
+          <a href="${c.url}" target="_blank">${c.name}</a>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px">${c.topic}</div>
+        </div>
+        <span class="ch-day">Day ${c.tDay}</span>
+        <select class="ch-sel" onchange="updateChStatus(${c.n},this.value)">${opts}</select>
+        <div class="ch-checks" title="Textbook · Workbook · Quizlet">
+          <input type="checkbox" class="ch-check" title="Textbook done" ${tb?'checked':''} onchange="toggleChBox('tb_${c.n}',this.checked)">
+          <input type="checkbox" class="ch-check" title="Workbook done" ${wb?'checked':''} onchange="toggleChBox('wb_${c.n}',this.checked)">
+          <input type="checkbox" class="ch-check" title="Quizlet done" ${ql?'checked':''} onchange="toggleChBox('ql_${c.n}',this.checked)">
+        </div>
+      </div>`;
+    }).join('');
+  });
+}
+function updateChStatus(n,val){
+  const wasNotMastered=S.chapterStatus[n]!=='mastered';
+  S.chapterStatus[n]=val;
+  if(val==='mastered'&&wasNotMastered){
+    S.totalXP+=25;
+    showMsg(`Chapter ${n} mastered! +25 XP 🎉`,'var(--clay)');
+  }
+  save(); renderAll();
+}
+function toggleChBox(key,val){S.chapterStatus[key]=val;save();}
+function showBook(book,tab){
+  document.getElementById('chListG1').style.display=book==='g1'?'flex':'none';
+  document.getElementById('chListG2').style.display=book==='g2'?'flex':'none';
+  document.querySelectorAll('.ch-tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+}
+
+// PACE METER
+function buildPaceMeter(){
+  const day=S.currentDay||1;
+  const mastered=Object.entries(S.chapterStatus).filter(([k,v])=>!k.includes('_')&&v==='mastered').length;
+  const targetChap=ALL_CHAPTERS.reduce((best,c)=>c.tDay<=day?c.n:best,0);
+  const targetPct=Math.round(targetChap/23*100);
+  const actualPct=Math.round(mastered/23*100);
+  const onTrack=mastered>=targetChap;
+
+  document.getElementById('paceMeter').innerHTML=`
+    <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Day</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="currentDayInput" value="${day}" min="1" max="90" style="width:60px;padding:5px 8px;font-size:13px" oninput="updateDay(this.value)">
+          <span style="font-size:11px;color:var(--muted)">of 90</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Chapters done</div>
+        <div style="font-size:20px;font-weight:700;color:var(--clove)">${mastered} <span style="font-size:13px;color:var(--muted);font-weight:400">/ 23</span></div>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Target chapter for Day ${day}</div>
+        <div style="font-size:20px;font-weight:700;color:${onTrack?'var(--olive)':'var(--rust)'}">Ch.${targetChap} <span style="font-size:11px;font-weight:400">${onTrack?'✅ On track':'⚠️ Behind'}</span></div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between">
+      <span>Chapters completed: ${actualPct}%</span><span>Target pace: ${targetPct}%</span>
+    </div>
+    <div class="pace-track" style="height:12px">
+      <div class="pace-fill-target" style="width:${targetPct}%"></div>
+      <div class="pace-fill-actual" style="width:${actualPct}%"></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#DCBAAE;border-radius:2px;display:inline-block"></span>Target pace</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--clay);border-radius:2px;display:inline-block"></span>Your progress</span>
+    </div>`;
+}
+function updateDay(val){S.currentDay=Math.min(90,Math.max(1,parseInt(val)||1));save();buildPaceMeter();updateHeader();}
+
+// SKILL BARS
+const SKILLS=[
+  {id:'reading', name:'📖 Reading',     color:'#378ADD',link:'https://www.notion.so/339a4278eeb38179bb14df55d0b7ddd8',tag:'Phase 1',tasks:'Read dialogues, NHK articles'},
+  {id:'writing', name:'✍️ Writing',     color:'#C3593F',link:'https://www.notion.so/339a4278eeb38179bb14df55d0b7ddd8',tag:'Phase 1',tasks:'Diary entries, workbook exercises'},
+  {id:'speaking',name:'🗣️ Speaking',    color:'#1D9E75',link:'https://www.notion.so/339a4278eeb38179bb14df55d0b7ddd8',tag:'Phase 1',tasks:'Shadowing, recordings, drills'},
+  {id:'listening',name:'👂 Listening',  color:'#BA7517',link:'https://www.notion.so/339a4278eeb38179bb14df55d0b7ddd8',tag:'Phase 1',tasks:'Genki audio, CJ, Teppei'},
+  {id:'kanji',   name:'🀄 Kanji',       color:'#E24B4A',link:'https://www.notion.so/339a4278eeb38179bb14df55d0b7ddd8',tag:'Phase 1',tasks:'Write 10×, Quizlet 80%+'},
+  {id:'vocab',   name:'📚 Vocab',       color:'#7F77DD',link:'https://www.notion.so/44b3db965b3841a799b7a5acafc61415', tag:'Session Log',tasks:'Quizlet Learn mode 80%+'},
+  {id:'business',name:'🏢 Business JP', color:'#491814',link:'https://www.notion.so/339a4278eeb38116ade6ce6b7fccd0af', tag:'Phrase Bank',tasks:'Thursday phrase sessions'},
+];
+function buildSkills(){
+  document.getElementById('skillsEl').innerHTML=SKILLS.map(s=>`
+    <div class="skill-row">
+      <div class="skill-header">
+        <span class="skill-name">${s.name}</span>
+        <div class="skill-right">
+          <span class="skill-pct" id="sp-${s.id}">${S.skills[s.id]}%</span>
+          <span class="skill-tasks" id="st-${s.id}">${S.skillTasks[s.id]||0} tasks</span>
+          <a class="skill-link" href="${s.link}" target="_blank">${s.tag} ↗</a>
+        </div>
+      </div>
+      <div class="strack"><div class="sfill" id="sf-${s.id}" style="width:0%;background:${s.color}"></div></div>
+      <div class="task-counter-row">
+        <button class="task-counter-btn" onclick="removeTask('${s.id}')">−</button>
+        <span class="task-counter-label">${s.tasks}</span>
+        <span class="task-counter-val" id="tc-${s.id}">${S.skillTasks[s.id]||0}</span>
+        <button class="task-counter-btn" onclick="addTask('${s.id}')">+</button>
+      </div>
+    </div>`).join('');
+  setTimeout(()=>SKILLS.forEach(s=>{const e=document.getElementById('sf-'+s.id);if(e)e.style.width=S.skills[s.id]+'%';}),120);
+}
+function addTask(id){
+  S.skillTasks[id]=(S.skillTasks[id]||0)+1; S.totalXP+=2;
+  if(S.skillTasks[id]%5===0)S.skills[id]=Math.min(100,S.skills[id]+1);
+  save(); renderAll();
+}
+function removeTask(id){
+  if((S.skillTasks[id]||0)<=0)return;
+  S.skillTasks[id]--; S.totalXP=Math.max(0,S.totalXP-2);
+  save(); renderAll();
+}
+function updateSkills(){
+  SKILLS.forEach(s=>{
+    const p=document.getElementById('sp-'+s.id);const f=document.getElementById('sf-'+s.id);
+    const t=document.getElementById('st-'+s.id);const tc=document.getElementById('tc-'+s.id);
+    if(p)p.textContent=S.skills[s.id]+'%';if(f)f.style.width=S.skills[s.id]+'%';
+    if(t)t.textContent=(S.skillTasks[s.id]||0)+' tasks';if(tc)tc.textContent=S.skillTasks[s.id]||0;
+  });
+}
+
+// STREAK
+function buildStreak(){
+  const days=['M','T','W','T','F','S','S'];
+  const ti=new Date().getDay()===0?6:new Date().getDay()-1;
+  document.getElementById('streakDots').innerHTML=days.map((l,i)=>{
+    const cls=i===ti?'dot dot-today':S.streakDays[i]?'dot dot-done':'dot dot-miss';
+    return `<div class="${cls}">${l}</div>`;
+  }).join('');
+  const done=S.streakDays.filter(Boolean).length;
+  document.getElementById('streakLabel').textContent=`${done} of 7 days this week`;
+  document.getElementById('streakBadge').textContent=`🔥 ${S.streak}-day streak`;
+}
+
+// CHART
+const TL={morning:'Morning',evening:'Evening',review:'Review',quiz:'Quiz',boss:'Boss',bonus:'Bonus'};
+const TC=['#AB7D41','#491814','#62644C','#C3593F','#AD2F21','#EFCA93'];
+let chart;
+function buildChart(){
+  const labels=Object.keys(S.xpByType).map(k=>TL[k]);
+  const data=Object.values(S.xpByType);
+  const total=data.reduce((a,b)=>a+b,0)||1;
+  document.getElementById('chartLegend').innerHTML=labels.map((l,i)=>
+    `<span class="legend-item"><span class="legend-swatch" style="background:${TC[i]}"></span>${l} ${Math.round(data[i]/total*100)}%</span>`).join('');
+  if(!chart){
+    chart=new Chart(document.getElementById('xpChart'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:TC,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'68%'}});
+  } else {chart.data.datasets[0].data=data;chart.update();}
+}
+
+// HISTORY
+const TYPE_OPTS=`<option value="morning">☀️ Morning block</option><option value="evening">🌙 Evening block</option><option value="review">📝 Review session</option><option value="quiz">🎯 Weekly quiz</option><option value="boss">🏆 Boss Battle</option><option value="bonus">⭐ Bonus session</option>`;
+function buildHistory(){
+  const el=document.getElementById('historyList');
+  if(!S.history.length){el.innerHTML='<div class="empty-state">No sessions yet!</div>';return;}
+  el.innerHTML=S.history.map(h=>`
+    <div>
+      <div class="hist-item${editingId===h.id?' editing':''}">
+        <span class="hist-label">${h.label}</span>
+        <span class="hist-date">${h.date} ${h.time}</span>
+        <span class="hist-xp">+${h.xp} XP</span>
+        <div class="hist-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEdit(${h.id})">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteEntry(${h.id})" style="color:var(--danger)">🗑️</button>
+        </div>
+      </div>
+      <div class="edit-panel${editingId===h.id?' open':''}" id="editPanel_${h.id}">
+        <div style="font-size:11px;font-weight:600;color:var(--clay);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Edit entry</div>
+        <div class="edit-row"><div class="edit-field" style="flex:2"><div class="form-label">Session type</div><select id="eType_${h.id}">${TYPE_OPTS}</select></div></div>
+        <div class="edit-row">
+          <div class="edit-field"><div class="form-label">Quizlet %</div><input type="number" id="eQs_${h.id}" value="${h.qs||0}" min="0" max="100"></div>
+          <div class="edit-field"><div class="form-label">Speaking</div><input type="number" id="eSm_${h.id}" value="${h.sm||0}" min="0" max="120"></div>
+          <div class="edit-field"><div class="form-label">Vocab</div><input type="number" id="eVa_${h.id}" value="${h.va||0}" min="0" max="200"></div>
+        </div>
+        <div class="edit-actions">
+          <button class="btn btn-ghost btn-sm" onclick="cancelEdit()">Cancel</button>
+          <button class="btn btn-sm" style="background:var(--clay);color:var(--linen)" onclick="saveEdit(${h.id})">Save</button>
+        </div>
+      </div>
+    </div>`).join('');
+  S.history.forEach(h=>{const sel=document.getElementById('eType_'+h.id);if(sel)sel.value=h.type;});
+}
+function deleteEntry(id){
+  const idx=S.history.findIndex(h=>h.id===id);if(idx===-1)return;
+  const h=S.history[idx];
+  S.totalXP=Math.max(0,S.totalXP-h.xp);S.sessions=Math.max(0,S.sessions-1);
+  S.xpByType[h.type]=Math.max(0,(S.xpByType[h.type]||0)-h.xp);
+  S.vocab=Math.max(0,S.vocab-(h.va||0));S.history.splice(idx,1);
+  if(editingId===id)editingId=null;save();renderAll();
+}
+function openEdit(id){if(editingId===id){editingId=null;buildHistory();return;}editingId=id;buildHistory();}
+function cancelEdit(){editingId=null;buildHistory();}
+function saveEdit(id){
+  const idx=S.history.findIndex(h=>h.id===id);if(idx===-1)return;
+  const old=S.history[idx];
+  const newType=document.getElementById('eType_'+id).value;
+  const newQs=parseInt(document.getElementById('eQs_'+id).value)||0;
+  const newSm=parseInt(document.getElementById('eSm_'+id).value)||0;
+  const newVa=parseInt(document.getElementById('eVa_'+id).value)||0;
+  const newXP=calcXP(newType,newQs,newSm);
+  S.totalXP=Math.max(0,S.totalXP-old.xp+newXP);
+  S.xpByType[old.type]=Math.max(0,(S.xpByType[old.type]||0)-old.xp);
+  S.xpByType[newType]=(S.xpByType[newType]||0)+newXP;
+  S.vocab=Math.max(0,S.vocab-(old.va||0)+newVa);
+  const lbl={morning:'☀️ Morning block',evening:'🌙 Evening block',review:'📝 Review session',quiz:'🎯 Weekly quiz',boss:'🏆 Boss Battle',bonus:'⭐ Bonus session'};
+  S.history[idx]={...old,type:newType,label:lbl[newType],xp:newXP,qs:newQs,sm:newSm,va:newVa};
+  editingId=null;save();renderAll();
+}
+
+// GRAMMAR CARDS
+const GRAMMAR=[
+  {pattern:'X は Y です',meaning:'X is Y',ch:'G1 Ch.1',color:'#378ADD',url:'https://www.notion.so/339a4278eeb3818d8cc0f9f4cd8df61c'},
+  {pattern:'X は Y じゃないです',meaning:'X is not Y',ch:'G1 Ch.1',color:'#E24B4A',url:'https://www.notion.so/339a4278eeb381cd8e0ef9f066525da3'},
+  {pattern:'U-verbs vs Ru-verbs',meaning:'Verb groups',ch:'G1 Ch.3',color:'#BA7517',url:'https://www.notion.so/339a4278eeb3813daf9fd9aa5adc9ab4'},
+  {pattern:'あります vs います',meaning:'Existence',ch:'G1 Ch.3',color:'#1D9E75',url:'https://www.notion.so/339a4278eeb3818184c8f1d1a75313e3'},
+  {pattern:'て-form',meaning:'Connect verbs / requests',ch:'G1 Ch.4',color:'#C3593F',url:'https://www.notion.so/339a4278eeb381ada673e024f485359c'},
+  {pattern:'Causative ~させる',meaning:'Make/let do ~',ch:'G2 Ch.14',color:'#AB7D41',url:'https://www.notion.so/339a4278eeb38192be96d2d60fe7fb21'},
+  {pattern:'Passive ~られる',meaning:'Be done to',ch:'G2 Ch.15',color:'#62644C',url:'https://www.notion.so/339a4278eeb38192be96d2d60fe7fb21'},
+  {pattern:'All grammar →',meaning:'Full index',ch:'All chapters',color:'#491814',url:'https://www.notion.so/339a4278eeb38192be96d2d60fe7fb21'},
+];
+function buildGrammar(){
+  document.getElementById('grammarGrid').innerHTML=GRAMMAR.map(g=>`
+    <a class="g-card" href="${g.url}" target="_blank">
+      <div class="g-dot" style="background:${g.color}"></div>
+      <div class="g-pattern">${g.pattern}</div>
+      <div class="g-meaning">${g.meaning}</div>
+      <div class="g-ch">${g.ch}</div>
+    </a>`).join('');
+}
+
+// RESET
+function openReset(){document.getElementById('resetModal').classList.add('open');}
+function closeReset(){document.getElementById('resetModal').classList.remove('open');}
+function confirmReset(){S=JSON.parse(JSON.stringify(DEFAULTS));save();closeReset();renderAll();showMsg('Dashboard reset. Fresh start! 🌱','var(--olive)');}
+
+// HEADER
+function updateHeader(){
+  const xp=S.totalXP;const lv=getLevel(xp);
+  const mastered=Object.entries(S.chapterStatus).filter(([k,v])=>!k.includes('_')&&v==='mastered').length;
+  const pct=lv.next>lv.min?Math.min(100,Math.round((xp-lv.min)/(lv.next-lv.min)*100)):100;
+  document.getElementById('xpFill').style.width=pct+'%';
+  document.getElementById('xpBarLeft').textContent=`${xp.toLocaleString()} / ${lv.next.toLocaleString()} XP`;
+  document.getElementById('xpBarRight').textContent=`Next: ${lv.nextLabel}`;
+  document.getElementById('xpPill').textContent=`${xp.toLocaleString()} XP`;
+  document.getElementById('nextLevelBadge').textContent=lv.next-xp>0?`${(lv.next-xp).toLocaleString()} XP → ${lv.nextLabel}`:lv.nextLabel;
+  document.getElementById('levelBadgeHero').textContent=lv.label;
+  document.getElementById('m-xp').textContent=xp.toLocaleString();
+  document.getElementById('m-sess').textContent=S.sessions;
+  document.getElementById('m-vocab').textContent=S.vocab.toLocaleString();
+  document.getElementById('m-chaps').textContent=mastered;
+  // current chapter badge
+  const currentCh=ALL_CHAPTERS.find(c=>S.chapterStatus[c.n]==='studying')||ALL_CHAPTERS.find(c=>(S.chapterStatus[c.n]||'not_started')==='not_started')||ALL_CHAPTERS[22];
+  document.getElementById('chapterBadge').textContent=`Ch.${currentCh.n} active`;
+}
+
+// LINKS
+const NL=[
+  {icon:'🇯🇵',name:'Study Hub',        tag:'Home page',       href:'https://www.notion.so/334a4278eeb381fe9565f9ab61c3857f'},
+  {icon:'🎓', name:'23-Ch Plan',        tag:'90-day roadmap',  href:'https://www.notion.so/339a4278eeb3815688e1d2837c6fe84f'},
+  {icon:'📖', name:'Chapter Tracker',   tag:'All 23 chapters', href:'https://www.notion.so/128bd43f58d844b999c7404dcbb682c5'},
+  {icon:'📊', name:'Skill Tracker',     tag:'Task-based %',    href:'https://www.notion.so/339a4278eeb38155b4bfd1b9b21b463b'},
+  {icon:'📅', name:'Session Log',       tag:'Existing DB',     href:'https://www.notion.so/c8671714031e4a6da1320d47883bd6cc'},
+  {icon:'📚', name:'Grammar Explainers',tag:'All concepts',    href:'https://www.notion.so/339a4278eeb38192be96d2d60fe7fb21'},
+  {icon:'🌱', name:'Phase 1',           tag:'Days 1–30 · Ch.1–10', href:'https://www.notion.so/339a4278eeb38179bb14df55d0b7ddd8'},
+  {icon:'🗓️', name:'Week 1 Sessions',   tag:'Days 1–7 detail', href:'https://www.notion.so/339a4278eeb38117b754e7b942921f0b'},
+  {icon:'🌿', name:'Phase 2',           tag:'Days 31–60 · Ch.11–18',href:'https://www.notion.so/339a4278eeb3819f9d3cca747f08a3f7'},
+  {icon:'🌳', name:'Phase 3',           tag:'Days 61–90 · Ch.19–23',href:'https://www.notion.so/339a4278eeb381d5b55add1324d87da7'},
+  {icon:'📅', name:'Day 1',             tag:'New Friends',     href:'https://www.notion.so/334a4278eeb38151a7e7e6fa5e226b42'},
+  {icon:'📅', name:'Day 2',             tag:'Shopping',        href:'https://www.notion.so/339a4278eeb38117bfd7eabbaf05d00f'},
+  {icon:'📅', name:'Day 3',             tag:'Verb types',      href:'https://www.notion.so/339a4278eeb381ed8e4dc9bc2e3bfa8c'},
+  {icon:'🏢', name:'Business JP',       tag:'Phrase Bank',     href:'https://www.notion.so/339a4278eeb38116ade6ce6b7fccd0af'},
+  {icon:'📊', name:'XP Session Log',    tag:'⚡ Auto XP',      href:'https://www.notion.so/44b3db965b3841a799b7a5acafc61415'},
+  {icon:'🖨️', name:'Print Sheets',      tag:'All 12 weeks',    href:'https://www.notion.so/339a4278eeb381269712d1843d163fc3'},
+];
+const EL=[
+  {icon:'🃏',name:'Quizlet',            tag:'Flashcards',       href:'https://quizlet.com'},
+  {icon:'🦜',name:'Duolingo',           tag:'Daily streak',     href:'https://www.duolingo.com'},
+  {icon:'🎙️',name:'Japanesepod101',     tag:'Listening',        href:'https://www.japanesepod101.com'},
+  {icon:'📺',name:'Comprehensible JP',  tag:'YouTube immersion',href:'https://www.youtube.com/@comprehensiblejapanese'},
+  {icon:'📰',name:'NHK Web Easy',       tag:'Graded reading',   href:'https://www3.nhk.or.jp/news/easy/'},
+  {icon:'📖',name:'Tae Kim Grammar',    tag:'Free guide',       href:'https://guidetojapanese.org/learn/'},
+  {icon:'🔍',name:'Jisho.org',          tag:'Dictionary',       href:'https://jisho.org'},
+  {icon:'📝',name:'JLPT Sensei',        tag:'Practice tests',   href:'https://jlptsensei.com'},
+  {icon:'🗣️',name:'iTalki',            tag:'Tutors',           href:'https://www.italki.com'},
+  {icon:'💬',name:'HelloTalk',          tag:'Exchange',         href:'https://www.hellotalk.com'},
+  {icon:'🏯',name:'WaniKani',           tag:'Kanji SRS',        href:'https://www.wanikani.com'},
+  {icon:'🎌',name:'Nihongo con Teppei', tag:'Podcast',          href:'https://nihongoconteppei.com'},
+  {icon:'📚',name:'Bunpro',            tag:'Grammar SRS',      href:'https://bunpro.jp'},
+  {icon:'🧪',name:'JTest4You',          tag:'JLPT practice',    href:'https://jtest4you.com'},
+];
+function buildLinks(){
+  const mk=arr=>arr.map(l=>`<a class="link-card" href="${l.href}" target="_blank"><div class="link-icon">${l.icon}</div><div class="link-name">${l.name}</div><div class="link-tag">${l.tag}</div></a>`).join('');
+  document.getElementById('notionLinks').innerHTML=mk(NL);
+  document.getElementById('extLinks').innerHTML=mk(EL);
+}
+
+function renderAll(){
+  updateHeader();buildStreak();updateSkills();buildChart();buildHistory();buildChapterList();buildPaceMeter();
+}
+
+/* INIT */
+load();buildSkills();buildLinks();buildGrammar();
+setTimeout(renderAll,80);
+</script>
+</body>
+</html>
